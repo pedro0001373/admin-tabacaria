@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="pt-br" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | EmpÃƒÂ³rio e Tabacaria JR</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+:root {
+    --primary: #4118a0;
+    --bg-dark: #0F172A;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: var(--bg-dark);
+    color: #F1F5F9;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.glass {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.neon-border {
+    box-shadow: 0 0 15px rgba(95, 36, 221, 0.3);
+    border: 1px solid rgba(139, 92, 246, 0.5);
+}
+
+@keyframes pulse-status {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+.pulse-green {
+    animation: pulse-status 2s infinite;
+}
+
+.modal-slide-up {
+    animation: slideUp 0.3s ease-out forwards;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.category-pill.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+    border-color: transparent;
+}
+
+</style>
+</head>
+<body class="bg-[#0F172A] min-h-screen text-white font-['Plus_Jakarta_Sans']">
+
+    <!-- LOGIN SCREEN -->
+    <div class="min-h-screen flex items-center justify-center p-6">
+        <div class="glass rounded-3xl p-8 max-w-md w-full border border-white/10">
+            <div class="text-center mb-8">
+                <i class="fa-solid fa-lock text-4xl text-purple-400 mb-4"></i>
+                <h1 class="text-2xl font-black uppercase italic"> Area Restrita</h1>
+                <p class="text-sm text-gray-400 mt-2">Empório e Tabacaria JR</p>
+            </div>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-2 uppercase font-bold">Tipo de Acesso</label>
+                    <select id="user-type" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-purple-500 text-white" required>
+                        <option value="">Selecione o tipo</option>
+                        <option value="funcionario">Funcionário</option>
+                        <option value="gestor">Gestor</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                <input type="password" id="admin-password" placeholder="Digite a senha" required
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-purple-500 text-white placeholder-gray-500">
+                <p id="login-error" class="text-red-400 text-sm hidden">Credenciais incorretas. Tente novamente.</p>
+                <button type="submit" id="login-btn" class="w-full bg-purple-600 hover:bg-purple-500 py-4 rounded-xl font-bold uppercase transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    Entrar
+                </button>
+            </form>
+            <a href="index%203.html" class="block text-center text-sm text-purple-400 mt-6 hover:underline">Voltar ao Catalogo</a>
+        </div>
+    </div>
+
+    <script>
+// ================================
+// AUTENTICACAO COM ROLES (ADMIN, GESTOR E FUNCIONARIO)
+// ================================
+
+const ADMIN_PASSWORD_KEY = 'adminSenha';
+const GESTOR_PASSWORD_KEY = 'gestorSenha';
+const FUNCIONARIO_PASSWORD_KEY = 'funcionarioSenha';
+const USER_ROLE_KEY = 'userRole';
+
+const DEFAULT_PASSWORDS = {
+    admin: 'admin2025',
+    gestor: 'gestor2025',
+    funcionario: 'func2025'
+};
+
+function getPassword(type) {
+    let key;
+    if (type === 'admin') key = ADMIN_PASSWORD_KEY;
+    else if (type === 'gestor') key = GESTOR_PASSWORD_KEY;
+    else key = FUNCIONARIO_PASSWORD_KEY;
+
+    const defaultPassword = DEFAULT_PASSWORDS[type];
+    return localStorage.getItem(key) || defaultPassword;
+}
+
+function setPassword(type, senha) {
+    let key;
+    if (type === 'admin') key = ADMIN_PASSWORD_KEY;
+    else if (type === 'gestor') key = GESTOR_PASSWORD_KEY;
+    else key = FUNCIONARIO_PASSWORD_KEY;
+
+    localStorage.setItem(key, senha);
+}
+
+function isAdminLoggedIn() {
+    return sessionStorage.getItem('adminLogado') === 'true';
+}
+
+function setAdminLoggedIn(value, role = 'admin') {
+    if (value) {
+        sessionStorage.setItem('adminLogado', 'true');
+        sessionStorage.setItem(USER_ROLE_KEY, role);
+    } else {
+        sessionStorage.removeItem('adminLogado');
+        sessionStorage.removeItem(USER_ROLE_KEY);
+    }
+}
+
+function getUserRole() {
+    return sessionStorage.getItem(USER_ROLE_KEY) || 'funcionario';
+}
+
+// Handler do formulario de login
+function handleLogin(event) {
+    event.preventDefault();
+
+    const userType = document.getElementById('user-type')?.value;
+    const senha = document.getElementById('admin-password')?.value;
+    const loginError = document.getElementById('login-error');
+
+    if (!userType || !senha) {
+        if (loginError) loginError.classList.remove('hidden');
+        return;
+    }
+
+    const senhaArmazenada = getPassword(userType);
+
+    if (senha === senhaArmazenada) {
+        setAdminLoggedIn(true, userType);
+        window.location.href = 'admin.html';
+    } else {
+        if (loginError) loginError.classList.remove('hidden');
+    }
+}
+
+// Funcao de logout
+function adminLogout() {
+    setAdminLoggedIn(false);
+    window.location.href = 'login.html';
+}
+
+// Inicializar na pagina de login
+document.addEventListener('DOMContentLoaded', () => {
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+
+    if (isAdminLoggedIn() && window.location.pathname.includes('login.html')) {
+        window.location.href = 'admin.html';
+    }
+
+    if (!isAdminLoggedIn() && window.location.pathname.includes('admin.html')) {
+        window.location.href = 'login.html';
+    }
+});
+
+</script>
+</body>
+</html>
